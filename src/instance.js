@@ -1,6 +1,6 @@
 
 class CompositeComponent {
-  
+
 }
 
 class DomComponent {
@@ -33,7 +33,7 @@ class DomComponent {
     const childElements = props.children || [];
     
     // 虚拟子节点实例化
-    this.childInstances = childElements.filter(child => child !== null).map(instantiate)
+    this.childInstances = childElements.map(instantiate)
     
     this.childInstances.map(childInstance => 
       // 构建真实的子节点
