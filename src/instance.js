@@ -1,7 +1,11 @@
 
+class CompositeComponent {
+  
+}
 
 class DomComponent {
   constructor(element) {
+    // 虚拟节点实例化
     this.currentElement = element;
     this.dom = null;
     this.childInstances = null
@@ -9,7 +13,8 @@ class DomComponent {
   mount() {
     const { type, props } = this.currentElement;
     this.dom = document.createElement(type);
-    
+
+    // 构建真实的dom
     // set attribute
     Object.keys(props).filter(isAttribute).forEach(name => {
       const value = props[name];
@@ -26,7 +31,14 @@ class DomComponent {
 
     // set children
     const childElements = props.children || [];
-    this.childInstances = childElements.filter(child => child !== null).map(instantiate).forEach(childDom => this.dom.appendChild(childDom))
+    
+    // 虚拟子节点实例化
+    this.childInstances = childElements.filter(child => child !== null).map(instantiate)
+    
+    this.childInstances.map(childInstance => 
+      // 构建真实的子节点
+      childInstance.mount()
+    ).forEach(childDom => this.dom.appendChild(childDom))
 
     return this.dom;
   }
@@ -61,11 +73,11 @@ class DomComponent {
     })
 
     // update children
-    // obj sub tree(obj format as dom)
+    // 虚拟子节点树
     const prevChildElements = nextProps.children || [];
     const nextChildElements = nextProps.children || [];
 
-    // dom sub tree
+    // 实例子节点树
     const prevChildInstances = this.childInstances;
     const nextChildInstances = [];
     const length = Math.max(prevChildElements.length, nextChildElements.length);
@@ -76,10 +88,36 @@ class DomComponent {
 
       if (!prevChildElement) {
         // add new child
-
+        const childInstance = instantiate(nextChildElement);
+        nextChildInstances.push(childInstance);
+        const childDom = childInstance.mout();
+        this.dom.appendChild(childDom);
       }
-
+      else if (!nextChildElement) {
+        // remove old child
+        const childInstance = prevChildInstances[i];
+        const childDom = childInstance.getDom();
+        this.dom.removeChild(childDom)
+      }
+      else if (prevChildElement.type && prevChildElement.type == nextChildElement.type) {
+        // update child
+        const childInstance = prevChildInstances[i];
+        nextChildInstances.push(childInstance);
+        childInstance.update(nextChildElement);
+      }
+      else {
+        // replace old with new
+        const nextChildInstance = instantiate(nextChildElement);
+        nextChildInstances.push(nextChildInstance);
+        const nextChildDom = nextChildInstance.mount();
+        const prevChildInstance = prevChildInstances[i];
+        const prevChildDom = prevChildInstance.getDom(); // FIX fails for text
+        this.dom.replaceChild(nextChildDom, prevChildDom);
+      }
     }
+
+    this.currentElement = nextElement;
+    this.childInstances = nextChildInstances;
   }
   getDom() {
     return this.dom;
