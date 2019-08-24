@@ -93,9 +93,13 @@ class DomComponent {
         const childDom = childInstance.mout();
         this.dom.appendChild(childDom);
       }
-      else if (!nextChildElement) {
+      else if (nextChildElement === undefined) {
         // remove old child
         const childInstance = prevChildInstances[i];
+        // remove blur handler from child(because blur is triggered by removeChild)
+        if (prevChildElement.props['onBlur']) {
+          this.dom.removeEventListener('onBlur', prevChildElement['onBlur'])
+        }
         const childDom = childInstance.getDom();
         this.dom.removeChild(childDom)
       }
